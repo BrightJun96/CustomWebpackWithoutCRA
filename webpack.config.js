@@ -20,9 +20,14 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.(js|jsx)$/,
         exclude: /node_modules/,
-        use: ["babel-loader"],
+        use: {
+          loader: "babel-loader",
+          options: {
+            presets: ["@babel/preset-env", "@babel/preset-react"],
+          },
+        },
       },
       {
         test: /\.css$/,
@@ -39,8 +44,8 @@ module.exports = {
   devServer: {
     host: "localhost",
     port: port,
-    open: true, // 서버를 실행하면 자동으로 브라우저가 열리게 해주는 옵션
     historyApiFallback: true, // 브라우저에서 URL을 변경할 수 있도록 해주는 옵션
-    hot: true, // 변경사항이 즉시 반영될 수 있도록 해주는 옵션
+    // hot: true, // 변경사항이 즉시 반영될 수 있도록 해주는 옵션
+    // open: true, // 서버를 실행하면 자동으로 브라우저가 열리게 해주는 옵션
   },
 };
