@@ -230,9 +230,13 @@ extensions에 넣은 확장자들은 **웹팩이 알아서 디렉터리 내에 �
 
 ### babel-loader
 
+> **바벨**  
+> 바벨은 **자바스크립트 ES6이상의 문법을 ES5문법으로 변환**해줄 수 있는 트랜스파일러이다.  
+> 바벨을 통해 **최신문법이 적용되지않는 브라우저에 폴리필하여 적용**해줄 수 있고 **리액트 문법(JSX) 자바스크립트 문법으로 변환하여 적용**할 수 있다.
+
 webpack에 babel을 로드하기 위해서는
 
-1. .babelrc파일을 프로젝트 루트에 생성하고 다음과 같이 설정한다.
+1. **.babelrc**파일을 프로젝트 루트에 생성하고 다음과 같이 설정한다.
 
 **.babelrc**
 
@@ -242,7 +246,11 @@ webpack에 babel을 로드하기 위해서는
 }
 ```
 
-2. webpack.config.js에서 다음과 같이 설정해준다.
+2. webpack.config.js에서 다음과 같이 설정해준다.  
+   로더는 modules의 rules라는 섹션에 정의하면 된다.  
+   test는 빌드할 파일 확장자를 정규식으로 입력하면 되고  
+   exclude는 제외할 파일을 정규식으로 입력해주면 된다.  
+   loader에는 사용할 로더 이름을 입력하고 options는 해당 로더에 대한 옵션을 입력하면 된다.
 
 **webpack.config.js**
 
@@ -281,6 +289,189 @@ module.exports = {
 
 ...
 };
+```
+
+### css-loader&style-loader
+
+**css-loader**는 js내에서 css파일을 import하게 해주며 여러 css파일을 하나로 번들링해주며  
+**style-loader**는 css파일 style태그로 만들어 html head태그란에 넣어준다.
+
+위 로더들을 적용하기 위해서 다른 로더와 같이 **test란 정규표현식과 loader란에 해당 로더들을 입력**해주면 된다.
+
+**여러 개의 로더를 적용할 때는 use 섹션에서 배열에 로더들을 담아 입력**해줄 수 있다.
+
+**webpack.config.js**
+
+```js
+
+{
+  test: /\.css$/,
+        use: [
+          { loader: "style-loader" },
+          {
+            loader: "css-loader",
+          },
+        ],}
+```
+
+```js
+
+{
+  test: /\.css$/,
+        use: ["style-loader","css-loader"
+
+        ],}
+```
+
+이 때 확인해볼 것은 `npm run build`로 빌드하였을 때 dist directory에 css파일에 보이지않는다는 것이다.  
+이유는 CSS 파일 로더는 기본적으로 HTML 문서의 head 영역에 **인터널(internal) 스타일 방식으로 스타일 코드를 추가하기 때문**이다.
+
+#### mini-css-extract-plugin
+
+위처럼 인터널 방식으로 스타일 코드를 추가하지 않고 css파일을 태그하여 css를 로드하고 싶다면 mini-css-extract-plugin를 사용하면 된다.
+
+`npm install --save-dev mini-css-extract-plugin`
+
+이는 style태그로 css를 만들어주는 style-loader대신 사용해줄 수 있다.
+
+1. webpack.config.js 최상단에서 플러그인을 불러온다.  
+   `npm install --save-dev mini-css-extract-plugin`
+
+2. 그리고 **style-loader대신 MiniCssExtractPlugin.loader를 적용해주고 플러그인에도 입력**해준다.
+
+```js
+      {
+        test: /\.css$/,
+        use: [MiniCssExtractPlugin.loader, "css-loader"],
+      },
+...
+  plugins: [
+    new HtmlWebpackPlugin({ template: "public/index.html" }),
+    new MiniCssExtractPlugin(),
+  ],
+```
+
+그러면 빌드를 했을 때 다음과 같이 css파일이 만들어진다.
+
+![image](cssfilewebpack.png)
+
+### sass-loader
+
+sass를 사용하기 위해서는 먼저 `sass`와 `sass-loader`패키지를 설치해줘야한다.
+설치한 뒤 webpack.config.js부분을 다음과 같이 설정해주면 된다.
+
+```js
+...
+ {
+        test: /\.(css|s[ac]ss)$/,
+        use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"],
+      },
+
+...
+```
+
+test란 파일확장자명에 **sass|scss 확장자명도 추가**로 입력해주고 plugin에는 **sass-loader를 입력**한다.
+
+### url-loader & file-loader & raw-loader
+
+url-loader는 설정한 사이즈보다 작으면 이미지나 폰트 파일을 인라인화해준다.  
+file-loader는 특정 파일을 그대로 내보내준다.  
+raw-loader는 특정 파일을 문자열로 가져올 수 있게 해준다.
+
+`npm i --save-dev url-loader file-loader`
+
+### asset modules instead of url-loader & file-loader
+
+webpack5에서는 위 loader를 사용하지말고 [asset modules](https://webpack.js.org/guides/asset-modules/)를 사용하는 것을 권장하고 있다.
+
+asset modules는 추가적인 로더없이 asset(폰트,아이콘,이미지 등)을 사용하도록 해준다.
+
+이전 로더 기능을 대신하여 4가지 모듈타입을 사용하면 된다.
+
+- asset/resource : file-loader 기능을 사용할 수 있다.
+- asset/inline : url-loader 기능을 사용할 수 있다.
+- asset/source : raw-loader 기능을 사용할 수 있다.
+- asset : 자동적으로 data URI로 내보낼 것인지 파일 그대로 내보낼 것인 결정해준다.  
+  기존에는 url-loader에서 size limit을 설정하여 해당 사이즈보다 작으면 인라인화해서 내보내주었다.
+
+#### Resource assets
+
+file-loader의 replacement 기능이다.
+
+이미지 파일을 사용하기 위해서 파일을 그대로 내보내줄 수 있는 asset/resource를 설정해줘야한다.
+
+설정 코드는 다음과 같다.
+
+```js
+      {
+        test: /\.(ico|png|jpg|jpeg|gif|svg)/,
+        type: "asset/resource",
+      },
+```
+
+이미지 확장자는 사용할 확장들을 입력해주면 된다.
+
+#### Inlining assets
+
+url-loader의 replacement 기능이다.  
+설정 확장자 이미지들은 data URI로 변경되며 인라인화된다.  
+(만약 네트워크 속도가 느린 서버라면 이미지 사이즈가 작은 파일들은 인라인화하여 처리할 때 사용하면 좋은 방법이다.  
+내가 이미지들을 base64로 변환할 번거로움없이 웹팩이 알아서 변경해주기 때문이다.
+)
+
+설정 코드는 다음과 같다.
+
+```js
+      // {
+      //   test: /\.(ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)/,
+      //   type: "asset/resource",
+      // },
+      {
+        test: /\.(ico|png|jpg|jpeg|gif|svg)/,
+        type: "asset/inline",
+      },
+```
+
+#### Source assets
+
+raw-loader의 replacement 기능이다.  
+파일을 문자열화하여 사용할 수 있게 해준다.
+
+설정 코드는 다음과 같다.
+
+```js
+      {
+       test: /\.txt/,
+       type: 'asset/source',
+      }
+```
+
+```js
+import exampleText from "./example.txt";
+
+block.textContent = exampleText; // 'Hello world'
+```
+
+위와 같이 txt의 문자열을 그대로 가져올 수 있다.
+
+#### asset
+
+위 asset기능을 종합적으로 사용하고 싶다면 type을 `'asset'`으로 지정해주면 된다.
+이 때 파일, 이미지 등의 사이즈가 일정 크기가 되었을 때 인라인화 시켜주는 기능을 사용하기 위해서  
+parser에서 설정해주면 된다.
+
+코드는 다음과 같다.
+
+```js
+{
+        test: /\.txt/,
+        type: 'asset',
+       parser: {
+         dataUrlCondition: {
+           maxSize: 4 * 1024 // 4kb
+         }
+       }
+      }
 ```
 
 ### 웹팩 개발 서버(webpack-dev-server)
@@ -339,6 +530,29 @@ host는 localhost이며 port 번호는 8080에서 열리며 변경사항이 즉�
 
 ### 빌드
 
+package.json에서 scripts란에 다음과 같이 입력하면 된다.
+
+**package.json**
+
+```js
+...
+  "scripts": {
+    "start": "webpack-dev-server",// or "webpack serve"
+    "build"  : "webpack"
+  },
+...
+```
+
+## 라이브러리 사용
+
+#### styled-component
+
+js내에서 styling을 해주기 때문에 styled-components를 사용할 때 따로 설치해줘야하는 플러그인은 없다.
+
+#### react-router
+
+별 다른 웹팩 설정없이 설치하여 사용할 수 있다.
+
 ## Reference
 
 - https://www.zerocho.com/category/Webpack/post/58aa916d745ca90018e5301d
@@ -346,4 +560,6 @@ host는 localhost이며 port 번호는 8080에서 열리며 변경사항이 즉�
 - https://webpack.js.org/concepts/entry-points/
 - https://velog.io/@_uchanlee/%EB%A6%AC%EC%95%A1%ED%8A%B8-%EC%9B%B9%ED%8C%A9%EC%9C%BC%EB%A1%9C-%EA%B0%9C%EB%B0%9C-%ED%99%98%EA%B2%BD-%EA%B5%AC%EC%B6%95%ED%95%98%EA%B8%B0without-CRA#%EB%AA%A9%EC%B0%A8
 
-- [package.json scripts 설정 방법]](https://www.npmjs.com/package/webpack-dev-server)
+- [package.json scripts 설정 방법](https://www.npmjs.com/package/webpack-dev-server)
+- https://berkbach.com/%EC%9B%B9%ED%8C%A9-webpack-%EA%B3%BC-%EB%B0%94%EB%B2%A8-babel-%EC%9D%84-%EC%9D%B4%EC%9A%A9%ED%95%9C-react-%EA%B0%9C%EB%B0%9C-%ED%99%98%EA%B2%BD-%EA%B5%AC%EC%84%B1%ED%95%98%EA%B8%B0-fb87d0027766
+- [sass-loader Usage](https://poiemaweb.com/sass-webpack)

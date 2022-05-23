@@ -1,6 +1,6 @@
 const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const port = 1115;
 
 module.exports = {
@@ -8,7 +8,7 @@ module.exports = {
   entry: { app: "./src/index.js" },
   output: {
     path: __dirname + "/dist",
-    filename: "[name].[chunkhash].js",
+    filename: "[name].[chunkhash].js", // => app.8sdcmmdsmaksdm.js
     publicPath: "/",
 
     /*
@@ -30,17 +30,28 @@ module.exports = {
         },
       },
       {
-        test: /\.css$/,
-        use: [
-          { loader: "style-loader" },
-          {
-            loader: "css-loader",
-          },
-        ],
+        test: /\.(css|s[ac]ss)$/,
+        use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"],
+      },
+      {
+        test: /\.(ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)/,
+        type: "asset/resource",
+      },
+
+      // { 이미지 파일을 base64로 변경하여 인라인화시켜주고 싶을 때
+      //   test: /\.(ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)/,
+      //   type: "asset/inline",
+      // },
+      {
+        test: /\.txt/,
+        type: "asset/source",
       },
     ],
   },
-  plugins: [new HtmlWebpackPlugin({ template: "public/index.html" })],
+  plugins: [
+    new HtmlWebpackPlugin({ template: "public/index.html" }),
+    new MiniCssExtractPlugin(),
+  ],
   devServer: {
     host: "localhost",
     port: port,
